@@ -7,22 +7,6 @@ pipeline {
         SCANNER_HOME = tool 'sonarqube'
     }
     stages {
-        stage('Lynis Security Scan') {
-            steps {
-                script {
-                    // Execute the Lynis security scan and convert the output to HTML
-                    sh 'lynis audit system | ansi2html > lynis-report.html'
-                    
-                    // Display the absolute path of the report in the Jenkins console output
-                    def reportPath = "${env.WORKSPACE}/lynis-report.html"
-                    echo "Lynis report path: ${reportPath}"
-
-                    // Archive the report file for access after the build
-                    archiveArtifacts artifacts: 'lynis-report.html'
-                }
-            }
-        }
-        
         stage("SonarQube Analysis") {
             steps {
                 withSonarQubeEnv('sonarqube') {
