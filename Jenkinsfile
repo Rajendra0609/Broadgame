@@ -26,14 +26,15 @@ pipeline {
         stage("SonarQube Analysis") {
             steps {
                 withSonarQubeEnv('sonarqube') {
+                        withCredentials([string(credentialsId: 'sonar', variable: 'SONAR_TOKEN')]) {
                         sh '''
                         /var/lib/jenkins/tools/hudson.plugins.sonar.SonarRunnerInstallation/sonarqube/bin/sonar-scanner \
                         -Dsonar.projectName=game \
                         -Dsonar.java.binaries=. \
                         -Dsonar.projectKey=game \
-                        -Dsonar.login=raja \
-                        -Dsonar.password=raja
+                        -Dsonar.login=${SONAR_TOKEN}
                         '''
+                    }
                 }
             }
         }
