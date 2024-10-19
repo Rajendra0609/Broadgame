@@ -4,12 +4,12 @@ pipeline {
         maven 'maven'
     }
     environment {
-        SCANNER_HOME = tool 'sonarqube'
+        SCANNER_HOME = tool 'sonarqube_1'
     }
     stages {
         stage("SonarQube Analysis") {
             steps {
-                withSonarQubeEnv('sonarqube') {
+                withSonarQubeEnv('sonarqube_1') {
                         withCredentials([string(credentialsId: 'sonar_user', variable: 'SONAR_TOKEN')]) {
                         sh '''
                         /var/lib/jenkins/tools/hudson.plugins.sonar.SonarRunnerInstallation/sonarqube/bin/sonar-scanner \
