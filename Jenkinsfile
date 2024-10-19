@@ -15,7 +15,7 @@ pipeline {
                         $SCANNER_HOME/bin/sonar-scanner -Dsonar.projectName=webapplication_ekart \
                         -Dsonar.java.binaries=. \
                         -Dsonar.projectKey=webapplication_ekart \
-                        -Dsonar.login=$SONAR_LOGIN_TOKEN
+                        -Dsonar.login=$sonar
                     '''
                 }
             }
