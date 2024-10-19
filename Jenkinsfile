@@ -5,7 +5,6 @@ pipeline {
     }
     environment {
         SCANNER_HOME = tool 'sonarqube'
-        DOCKER_CREDENTIALS_ID = credentials('dockerhub')
         IMAGE_NAME = 'daggu1997/broadgame'
     }
     parameters {
@@ -154,8 +153,8 @@ pipeline {
                 script {
                     try {
                         def version = "${env.BUILD_NUMBER}-${params.ENVIRONMENT}" // Use build number and environment for versioning
-                        withDockerRegistry (credentialsId: DOCKER_CREDENTIALS_ID) {
-                            sh "docker build -t ${IMAGE_NAME}:${version } ."
+                        withDockerRegistry(credentialsId: 'dockerhub'){
+                            sh "docker build -t ${IMAGE_NAME}:v1.0.0 ."
                         }
                     } catch (Exception e) {
                         error("Docker Build failed: ${e.message}")
@@ -167,7 +166,7 @@ pipeline {
             steps {
                 script {
                     try {
-                        sh "trivy image --format table --timeout 5m -o trivy-image-report.html ${IMAGE_NAME}:${env.BUILD_NUMBER}-${params.ENVIRONMENT}"
+                        sh "trivy image --format table --timeout 5m -o trivy-image-report.html ${IMAGE_NAME}:v1.0.0"
                         echo "Trivy report path: ${env.WORKSPACE}/trivy-image-report.html"
                         archiveArtifacts artifacts: 'trivy-image-report.html'
                     } catch (Exception e) {
@@ -180,8 +179,8 @@ pipeline {
             steps {
                 script {
                     try {
-                        withDockerRegistry(credentialsId: DOCKER_CREDENTIALS_ID) {
-                            sh "docker push ${IMAGE_NAME}:${env.BUILD_NUMBER}-${params.ENVIRONMENT}"
+                        withDockerRegistry(credentialsId: 'dockerhub') {
+                            sh "docker push ${IMAGE_NAME}:v1.0.0"
                         }
                     } catch (Exception e) {
                         error("Docker Push failed: ${e.message}")
