@@ -46,16 +46,26 @@ pipeline {
         }
         stage('OWASP FS SCAN') {
             steps {
-                script {
-                    Run OWASP Dependency Check
-                   dependencyCheck additionalArguments: '--scan ./ --format HTML', odcInstallation: 'dpcheck'
-                
-                    Publish the Dependency Check report
-                  dependencyCheckPublisher pattern: '**/dependency-check-report.xml'
-                    archiveArtifacts artifacts: '**/dependency-check-report.html', allowEmptyArchive: true
-                }
-            }
+            script {
+            // Run OWASP Dependency Check
+            dependencyCheck(
+                additionalArguments: '--scan ./ --format HTML',
+                odcInstallation: 'dpcheck'
+            )
+
+            // Publish the Dependency Check report
+            dependencyCheckPublisher(
+                pattern: '**/dependency-check-report.xml'
+            )
+
+            // Archive the Dependency Check report
+            archiveArtifacts(
+                artifacts: '**/dependency-check-report.html',
+                allowEmptyArchive: true
+            )
         }
+    }
+}
         stage("Sonarqube Analysis "){
             steps{
                 withSonarQubeEnv('sonarqube') {
