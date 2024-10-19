@@ -11,11 +11,11 @@ pipeline {
             steps {
                 withSonarQubeEnv('sonarqube_1') {
                         sh '''
-    $SCANNER_HOME/bin/sonar-scanner -Dsonar.projectName=webapplication_ekart \
-    -Dsonar.java.binaries=. \
-    -Dsonar.projectKey=webapplication_ekart \
-    -Dsonar.login=$sonar
-'''
+                           $SCANNER_HOME/bin/sonar-scanner -Dsonar.projectName=webapplication_ekart \
+                           -Dsonar.java.binaries=. \
+                           -Dsonar.projectKey=webapplication_ekart \
+                           -Dsonar.login=$sonar
+                        '''
                   }
                 }
             }
