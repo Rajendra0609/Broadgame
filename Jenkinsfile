@@ -27,7 +27,7 @@ pipeline {
         stage('Test') {
             steps {
                 sh 'mvn test'
-                sh 'integration-test'
+                sh 'mvn integration-test'
             }
         }
         stage('Lynis Security Scan') {
