@@ -10,15 +10,13 @@ pipeline {
         stage("SonarQube Analysis") {
             steps {
                 withSonarQubeEnv('sonarqube_1') {
-                        withCredentials([string(credentialsId: 'sonar_user', variable: 'SONAR_TOKEN')]) {
                         sh '''
-                        /var/lib/jenkins/tools/hudson.plugins.sonar.SonarRunnerInstallation/sonarqube/bin/sonar-scanner \
-                        -Dsonar.projectName=game \
-                        -Dsonar.java.binaries=. \
-                        -Dsonar.projectKey=game \
-                        -Dsonar.login=${SONAR_TOKEN}
-                        '''
-                    }
+    $SCANNER_HOME/bin/sonar-scanner -Dsonar.projectName=webapplication_ekart \
+    -Dsonar.java.binaries=. \
+    -Dsonar.projectKey=webapplication_ekart \
+    -Dsonar.login=$sonar
+'''
+                  }
                 }
             }
         }
