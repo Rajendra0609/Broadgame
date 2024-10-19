@@ -26,11 +26,9 @@ pipeline {
         stage("SonarQube Analysis") {
             steps {
                 withSonarQubeEnv('sonarqube') {
-                    sh '''
-                    $SCANNER_HOME/bin/sonar-scanner -Dsonar.projectName=Broadgame \
+                    sh '''$SCANNER_HOME/bin/sonar-scanner -Dsonar.projectName=game \
                     -Dsonar.java.binaries=. \
-                    -Dsonar.projectKey=broadgame
-                    '''
+                    -Dsonar.projectKey=game'''
                 }
             }
         }
