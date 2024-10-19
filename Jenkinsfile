@@ -7,29 +7,6 @@ pipeline {
         SCANNER_HOME = tool 'sonarqube'
     }
     stages {
-        stage('Maven Clean') {
-            steps {
-                sh 'mvn clean'
-                sh 'mvn validate'
-            }
-        }
-        stage('Maven Compile') {
-            steps {
-                sh 'mvn compile'
-            }
-        }
-        stage('Install') {
-            steps {
-                sh 'mvn package'
-                archiveArtifacts artifacts: 'target/*.jar'
-            }
-        }
-        stage('Test') {
-            steps {
-                sh 'mvn test'
-                sh 'mvn integration-test'
-            }
-        }
         stage('Lynis Security Scan') {
             steps {
                 script {
@@ -45,42 +22,16 @@ pipeline {
                 }
             }
         }
-        stage('OWASP FS SCAN') {
-            steps {
-                script {
-                    // Run OWASP Dependency Check
-                    dependencyCheck(
-                        additionalArguments: '--scan ./ --format HTML',
-                        odcInstallation: 'dpcheck'
-                    )
-
-                    // Publish the Dependency Check report
-                    dependencyCheckPublisher(
-                        pattern: '**/dependency-check-report.xml'
-                    )
-
-                    // Archive the Dependency Check report
-                    archiveArtifacts(
-                        artifacts: '**/dependency-check-report.html',
-                        allowEmptyArchive: true
-                    )
-                }
-            }
-        }
+        
         stage("SonarQube Analysis") {
             steps {
                 withSonarQubeEnv('sonarqube') {
                     sh '''
-                    $SCANNER_HOME/bin/sonar-scanner -Dsonar.projectName=webapplication_ekart \
+                    $SCANNER_HOME/bin/sonar-scanner -Dsonar.projectName=Broadgame \
                     -Dsonar.java.binaries=. \
-                    -Dsonar.projectKey=webapplication_ekart
+                    -Dsonar.projectKey=broadgame
                     '''
                 }
-            }
-        }
-        stage('Build') {
-            steps {
-                sh "mvn package -DskipTests=true"
             }
         }
         stage('Build & Tag Docker Image') {
