@@ -3,17 +3,18 @@ pipeline {
     tools {
         maven 'maven'
     }
-    environment {
-        SCANNER_HOME = tool 'sonarqube'
-        IMAGE_NAME = 'daggu1997/broadgame'
-    }
     parameters {
     string(name: 'ENVIRONMENT', defaultValue: 'development', description: 'Choose the environment for deployment')
     booleanParam(name: 'SKIP_TESTS', defaultValue: false, description: 'Skip tests during build?')
-    string(name: 'IMAGE_NAME', defaultValue: 'my-app', description: 'Docker image name for the Kubernetes deployment')
-    string(name: 'IMAGE_TAG', defaultValue: 'latest', description: 'Docker image tag for the Kubernetes deployment')
+    string(name: 'IMAGE_NAME', defaultValue: 'daggu1997/broadgame', description: 'Docker image name for the Kubernetes deployment')
+     string(name: 'TAG_VERSION', defaultValue: 'latest', description: 'Image tag version')
     string(name: 'REPLICAS', defaultValue: '1', description: 'Number of replicas for the deployment')
 }
+    environment {
+        SCANNER_HOME = tool 'sonarqube'
+        IMAGE_NAME = 'daggu1997/broadgame'
+        IMAGE_TAG = "${params.TAG_VERSION ?: 'latest'}"
+    }
     stages {
         stage('Preparation') {
             steps {
@@ -149,24 +150,26 @@ pipeline {
             }
         }
         stage('Build & Tag Docker Image') {
-            steps {
-                script {
-                    try {
-                        def version = "${env.BUILD_NUMBER}-${params.ENVIRONMENT}" // Use build number and environment for versioning
-                        withDockerRegistry(credentialsId: 'dockerhub'){
-                            sh "docker build -t ${IMAGE_NAME}:v1.0.0 ."
-                        }
-                    } catch (Exception e) {
-                        error("Docker Build failed: ${e.message}")
-                    }
+    steps {
+        script {
+            try {
+                // Use the TAG_VERSION parameter directly for tagging
+                def tagVersion = params.TAG_VERSION ?: 'latest'
+                withDockerRegistry(credentialsId: 'dockerhub') {
+                    sh "docker build -t ${params.IMAGE_NAME}:${tagVersion} ."
                 }
+            } catch (Exception e) {
+                error("Docker Build failed: ${e.message}")
             }
         }
+    }
+}
         stage('TRIVY') {
             steps {
                 script {
                     try {
-                        sh "trivy image --format table --timeout 15m -o trivy-image-report.html ${IMAGE_NAME}:v1.0.0"
+                        def tagVersion = params.TAG_VERSION ?: 'latest'
+                        sh "trivy image --format table --timeout 15m -o trivy-image-report.html ${params.IMAGE_NAME}:${tagVersion}"
                         echo "Trivy report path: ${env.WORKSPACE}/trivy-image-report.html"
                         archiveArtifacts artifacts: 'trivy-image-report.html'
                     } catch (Exception e) {
@@ -179,8 +182,9 @@ pipeline {
             steps {
                 script {
                     try {
+                        def tagVersion = params.TAG_VERSION ?: 'latest'
                         withDockerRegistry(credentialsId: 'dockerhub') {
-                            sh "docker push ${IMAGE_NAME}:v1.0.0"
+                            sh "docker push ${params.IMAGE_NAME}:${tagVersion}"
                         }
                     } catch (Exception e) {
                         error("Docker Push failed: ${e.message}")
@@ -188,7 +192,7 @@ pipeline {
                 }
             }
         }
-        stage('Kubernetes Approval') {
+        stage('Update the tag for Yaml file') {
         steps {
         script {
                     // Approval step from admin
@@ -205,6 +209,35 @@ pipeline {
                 }
     }
 }
+        stage('Update Image Tag in YAML') {
+    steps {
+        script {
+            // Extract the image tag
+            def tagVersion = params.TAG_VERSION ?: 'latest'
+            def imageTag = sh(script: "grep -oP '(?<=daggu1997/broadgame:)[^ ]+' deployment-service.yaml", returnStdout: true).trim()
+
+            // Update the deployment-service.yaml with the new image tag
+            sh "sed -i 's|:.*|:${tagVersion}|g' deployment-service.yaml"
+        }
+    }
+}
+    stage('Deplay the Yaml file to kubernetes') {
+        steps {
+        script {
+                    // Approval step from admin
+                    def approval = input(
+                        id: 'Approval', 
+                        message: 'Do you want to proceed with building the Docker image?',
+                        parameters: [
+                            [$class: 'BooleanParameterDefinition', name: 'Proceed', defaultValue: true]
+                        ]
+                    )
+                    if (!approval) {
+                        error("Build was not approved by admin.")
+                    }
+                }
+    }
+}    
         stage('Cleanup Workspace') {
             steps {
                 cleanWs()
