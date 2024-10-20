@@ -8,9 +8,12 @@ pipeline {
         IMAGE_NAME = 'daggu1997/broadgame'
     }
     parameters {
-        string(name: 'ENVIRONMENT', defaultValue: 'development', description: 'Choose the environment for deployment')
-        booleanParam(name: 'SKIP_TESTS', defaultValue: false, description: 'Skip tests during build?')
-    }
+    string(name: 'ENVIRONMENT', defaultValue: 'development', description: 'Choose the environment for deployment')
+    booleanParam(name: 'SKIP_TESTS', defaultValue: false, description: 'Skip tests during build?')
+    string(name: 'IMAGE_NAME', defaultValue: 'my-app', description: 'Docker image name for the Kubernetes deployment')
+    string(name: 'IMAGE_TAG', defaultValue: 'latest', description: 'Docker image tag for the Kubernetes deployment')
+    string(name: 'REPLICAS', defaultValue: '1', description: 'Number of replicas for the deployment')
+}
     stages {
         stage('Preparation') {
             steps {
@@ -94,9 +97,6 @@ pipeline {
                             additionalArguments: '--scan ./ --format HTML',
                             odcInstallation: 'dpcheck'
                         )
-                        dependencyCheckPublisher(
-                            pattern: '**/dependency-check-report.xml'
-                        )
                         archiveArtifacts(
                             artifacts: '**/dependency-check-report.html',
                             allowEmptyArchive: true
@@ -166,7 +166,7 @@ pipeline {
             steps {
                 script {
                     try {
-                        sh "trivy image --format table --timeout 5m -o trivy-image-report.html ${IMAGE_NAME}:v1.0.0"
+                        sh "trivy image --format table --timeout 15m -o trivy-image-report.html ${IMAGE_NAME}:v1.0.0"
                         echo "Trivy report path: ${env.WORKSPACE}/trivy-image-report.html"
                         archiveArtifacts artifacts: 'trivy-image-report.html'
                     } catch (Exception e) {
@@ -188,6 +188,23 @@ pipeline {
                 }
             }
         }
+        stage('Kubernetes Approval') {
+        steps {
+        script {
+                    // Approval step from admin
+                    def approval = input(
+                        id: 'Approval', 
+                        message: 'Do you want to proceed with building the Docker image?',
+                        parameters: [
+                            [$class: 'BooleanParameterDefinition', name: 'Proceed', defaultValue: true]
+                        ]
+                    )
+                    if (!approval) {
+                        error("Build was not approved by admin.")
+                    }
+                }
+    }
+}
         stage('Cleanup Workspace') {
             steps {
                 cleanWs()
