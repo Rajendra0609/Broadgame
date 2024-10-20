@@ -6,6 +6,7 @@ pipeline {
     environment {
         SCANNER_HOME = tool 'sonarqube'
         IMAGE_NAME = 'daggu1997/broadgame'
+        IMAGE_TAG= 'v1.0.1'
     }
     parameters {
     string(name: 'ENVIRONMENT', defaultValue: 'development', description: 'Choose the environment for deployment')
@@ -154,7 +155,7 @@ pipeline {
                     try {
                         def version = "${env.BUILD_NUMBER}-${params.ENVIRONMENT}" // Use build number and environment for versioning
                         withDockerRegistry(credentialsId: 'dockerhub'){
-                            sh "docker build -t ${IMAGE_NAME}:v1.0.0 ."
+                            sh "docker build -t ${params.IMAGE_NAME}:${params.IMAGE_TAG} ."
                         }
                     } catch (Exception e) {
                         error("Docker Build failed: ${e.message}")
@@ -166,7 +167,7 @@ pipeline {
             steps {
                 script {
                     try {
-                        sh "trivy image --format table --timeout 15m -o trivy-image-report.html ${IMAGE_NAME}:v1.0.0"
+                        sh "trivy image --format table --timeout 15m -o trivy-image-report.html ${params.IMAGE_NAME}:${params.IMAGE_TAG}"
                         echo "Trivy report path: ${env.WORKSPACE}/trivy-image-report.html"
                         archiveArtifacts artifacts: 'trivy-image-report.html'
                     } catch (Exception e) {
@@ -180,7 +181,7 @@ pipeline {
                 script {
                     try {
                         withDockerRegistry(credentialsId: 'dockerhub') {
-                            sh "docker push ${IMAGE_NAME}:v1.0.0"
+                            sh "docker push ${params.IMAGE_NAME}:${params.IMAGE_TAG}"
                         }
                     } catch (Exception e) {
                         error("Docker Push failed: ${e.message}")
@@ -188,7 +189,7 @@ pipeline {
                 }
             }
         }
-        stage('Kubernetes Approval') {
+        stage('Update the tag for Yaml file') {
         steps {
         script {
                     // Approval step from admin
@@ -205,6 +206,34 @@ pipeline {
                 }
     }
 }
+        stage('Update Image Tag in YAML') {
+    steps {
+        script {
+            // Extract the image tag
+            def imageTag = sh(script: "grep -oP '(?<=daggu1997/broadgame:)[^ ]+' deployment-service.yaml", returnStdout: true).trim()
+
+            // Update the deployment-service.yaml with the new image tag
+            sh "sed -i 's|:.*|:${imageTag}|g' deployment-service.yaml"
+        }
+    }
+}
+    stage('Deplay the Yaml file to kubernetes') {
+        steps {
+        script {
+                    // Approval step from admin
+                    def approval = input(
+                        id: 'Approval', 
+                        message: 'Do you want to proceed with building the Docker image?',
+                        parameters: [
+                            [$class: 'BooleanParameterDefinition', name: 'Proceed', defaultValue: true]
+                        ]
+                    )
+                    if (!approval) {
+                        error("Build was not approved by admin.")
+                    }
+                }
+    }
+}    
         stage('Cleanup Workspace') {
             steps {
                 cleanWs()
