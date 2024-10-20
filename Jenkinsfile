@@ -3,18 +3,18 @@ pipeline {
     tools {
         maven 'maven'
     }
-    environment {
-        SCANNER_HOME = tool 'sonarqube'
-        IMAGE_NAME = 'daggu1997/broadgame'
-        IMAGE_TAG= 'v1.0.1'
-    }
     parameters {
     string(name: 'ENVIRONMENT', defaultValue: 'development', description: 'Choose the environment for deployment')
     booleanParam(name: 'SKIP_TESTS', defaultValue: false, description: 'Skip tests during build?')
-    string(name: 'IMAGE_NAME', defaultValue: 'my-app', description: 'Docker image name for the Kubernetes deployment')
-    string(name: 'IMAGE_TAG', defaultValue: 'latest', description: 'Docker image tag for the Kubernetes deployment')
+    string(name: 'IMAGE_NAME', defaultValue: 'daggu1997/broadgame', description: 'Docker image name for the Kubernetes deployment')
+     string(name: 'TAG_VERSION', defaultValue: 'latest', description: 'Image tag version')
     string(name: 'REPLICAS', defaultValue: '1', description: 'Number of replicas for the deployment')
 }
+    environment {
+        SCANNER_HOME = tool 'sonarqube'
+        IMAGE_NAME = env.IMAGE_NAME
+        IMAGE_TAG = env.TAG_VERSION
+    }
     stages {
         stage('Preparation') {
             steps {
