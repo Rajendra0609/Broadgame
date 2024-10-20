@@ -13,7 +13,7 @@ pipeline {
     environment {
         SCANNER_HOME = tool 'sonarqube'
         IMAGE_NAME = 'daggu1997/broadgame'
-        IMAGE_TAG = env.TAG_VERSION ?: 'latest'
+        IMAGE_TAG = "${params.TAG_VERSION ?: 'latest'}"
     }
     stages {
         stage('Preparation') {
