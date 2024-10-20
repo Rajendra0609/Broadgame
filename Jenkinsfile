@@ -194,18 +194,18 @@ pipeline {
         stage('Kubernetes Approval') {
         steps {
         script {
-            // Approval step for Kubernetes deployment
-            def kubernetesApproval = input(
-                id: 'Kubernetes Approval', 
-                message: 'Do you want to proceed with the Kubernetes deployment?',
-                parameters: [
-                    [$class: 'BooleanParameterDefinition', name: 'Deploy to Kubernetes', defaultValue: true]
-                ]
-            )
-            if (!kubernetesApproval) {
-                error("Kubernetes deployment was not approved.")
-            }
-        }
+                    // Approval step from admin
+                    def approval = input(
+                        id: 'Approval', 
+                        message: 'Do you want to proceed with building the Docker image?',
+                        parameters: [
+                            [$class: 'BooleanParameterDefinition', name: 'Proceed', defaultValue: true]
+                        ]
+                    )
+                    if (!approval) {
+                        error("Build was not approved by admin.")
+                    }
+                }
     }
 }
         stage('Cleanup Workspace') {
