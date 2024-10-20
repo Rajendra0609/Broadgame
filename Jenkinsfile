@@ -150,25 +150,26 @@ pipeline {
             }
         }
         stage('Build & Tag Docker Image') {
-            steps {
-                script {
-                    try {
-                        def tagVersion = params.TAG_VERSION ?: 'latest' // Use build number and environment for versioning
-                        withDockerRegistry(credentialsId: 'dockerhub'){
-                            sh "docker build -t ${params.IMAGE_NAME}:${params.IMAGE_TAG} ."
-                        }
-                    } catch (Exception e) {
-                        error("Docker Build failed: ${e.message}")
-                    }
+    steps {
+        script {
+            try {
+                // Use the TAG_VERSION parameter directly for tagging
+                def tagVersion = params.TAG_VERSION ?: 'latest'
+                withDockerRegistry(credentialsId: 'dockerhub') {
+                    sh "docker build -t ${params.IMAGE_NAME}:${tagVersion} ."
                 }
+            } catch (Exception e) {
+                error("Docker Build failed: ${e.message}")
             }
         }
+    }
+}
         stage('TRIVY') {
             steps {
                 script {
                     try {
                         def tagVersion = params.TAG_VERSION ?: 'latest'
-                        sh "trivy image --format table --timeout 15m -o trivy-image-report.html ${params.IMAGE_NAME}:${params.IMAGE_TAG}"
+                        sh "trivy image --format table --timeout 15m -o trivy-image-report.html ${params.IMAGE_NAME}:${tagVersion}"
                         echo "Trivy report path: ${env.WORKSPACE}/trivy-image-report.html"
                         archiveArtifacts artifacts: 'trivy-image-report.html'
                     } catch (Exception e) {
@@ -183,7 +184,7 @@ pipeline {
                     try {
                         def tagVersion = params.TAG_VERSION ?: 'latest'
                         withDockerRegistry(credentialsId: 'dockerhub') {
-                            sh "docker push ${params.IMAGE_NAME}:${params.IMAGE_TAG}"
+                            sh "docker push ${params.IMAGE_NAME}:${tagVersion}"
                         }
                     } catch (Exception e) {
                         error("Docker Push failed: ${e.message}")
@@ -216,7 +217,7 @@ pipeline {
             def imageTag = sh(script: "grep -oP '(?<=daggu1997/broadgame:)[^ ]+' deployment-service.yaml", returnStdout: true).trim()
 
             // Update the deployment-service.yaml with the new image tag
-            sh "sed -i 's|:.*|:${imageTag}|g' deployment-service.yaml"
+            sh "sed -i 's|:.*|:${tagVersion}|g' deployment-service.yaml"
         }
     }
 }
