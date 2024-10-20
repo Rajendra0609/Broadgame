@@ -97,9 +97,6 @@ pipeline {
                             additionalArguments: '--scan ./ --format HTML',
                             odcInstallation: 'dpcheck'
                         )
-                        dependencyCheckPublisher(
-                            pattern: '**/dependency-check-report.xml'
-                        )
                         archiveArtifacts(
                             artifacts: '**/dependency-check-report.html',
                             allowEmptyArchive: true
