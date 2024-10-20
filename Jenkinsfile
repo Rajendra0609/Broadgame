@@ -8,9 +8,12 @@ pipeline {
         IMAGE_NAME = 'daggu1997/broadgame'
     }
     parameters {
-        string(name: 'ENVIRONMENT', defaultValue: 'development', description: 'Choose the environment for deployment')
-        booleanParam(name: 'SKIP_TESTS', defaultValue: false, description: 'Skip tests during build?')
-    }
+    string(name: 'ENVIRONMENT', defaultValue: 'development', description: 'Choose the environment for deployment')
+    booleanParam(name: 'SKIP_TESTS', defaultValue: false, description: 'Skip tests during build?')
+    string(name: 'IMAGE_NAME', defaultValue: 'my-app', description: 'Docker image name for the Kubernetes deployment')
+    string(name: 'IMAGE_TAG', defaultValue: 'latest', description: 'Docker image tag for the Kubernetes deployment')
+    string(name: 'REPLICAS', defaultValue: '1', description: 'Number of replicas for the deployment')
+}
     stages {
         stage('Preparation') {
             steps {
@@ -188,6 +191,23 @@ pipeline {
                 }
             }
         }
+        stage('Kubernetes Approval') {
+        steps {
+        script {
+            // Approval step for Kubernetes deployment
+            def kubernetesApproval = input(
+                id: 'Kubernetes Approval', 
+                message: 'Do you want to proceed with the Kubernetes deployment?',
+                parameters: [
+                    [$class: 'BooleanParameterDefinition', name: 'Deploy to Kubernetes', defaultValue: true]
+                ]
+            )
+            if (!kubernetesApproval) {
+                error("Kubernetes deployment was not approved.")
+            }
+        }
+    }
+}
         stage('Cleanup Workspace') {
             steps {
                 cleanWs()
