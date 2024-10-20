@@ -169,7 +169,7 @@ pipeline {
             steps {
                 script {
                     try {
-                        sh "trivy image --format table --timeout 5m -o trivy-image-report.html ${IMAGE_NAME}:v1.0.0"
+                        sh "trivy image --format table --timeout 15m -o trivy-image-report.html ${IMAGE_NAME}:v1.0.0"
                         echo "Trivy report path: ${env.WORKSPACE}/trivy-image-report.html"
                         archiveArtifacts artifacts: 'trivy-image-report.html'
                     } catch (Exception e) {
