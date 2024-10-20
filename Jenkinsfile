@@ -153,7 +153,7 @@ pipeline {
             steps {
                 script {
                     try {
-                        def version = "${env.BUILD_NUMBER}-${params.ENVIRONMENT}" // Use build number and environment for versioning
+                        def tagVersion = params.TAG_VERSION ?: 'latest' // Use build number and environment for versioning
                         withDockerRegistry(credentialsId: 'dockerhub'){
                             sh "docker build -t ${params.IMAGE_NAME}:${params.IMAGE_TAG} ."
                         }
@@ -167,6 +167,7 @@ pipeline {
             steps {
                 script {
                     try {
+                        def tagVersion = params.TAG_VERSION ?: 'latest'
                         sh "trivy image --format table --timeout 15m -o trivy-image-report.html ${params.IMAGE_NAME}:${params.IMAGE_TAG}"
                         echo "Trivy report path: ${env.WORKSPACE}/trivy-image-report.html"
                         archiveArtifacts artifacts: 'trivy-image-report.html'
@@ -180,6 +181,7 @@ pipeline {
             steps {
                 script {
                     try {
+                        def tagVersion = params.TAG_VERSION ?: 'latest'
                         withDockerRegistry(credentialsId: 'dockerhub') {
                             sh "docker push ${params.IMAGE_NAME}:${params.IMAGE_TAG}"
                         }
@@ -210,6 +212,7 @@ pipeline {
     steps {
         script {
             // Extract the image tag
+            def tagVersion = params.TAG_VERSION ?: 'latest'
             def imageTag = sh(script: "grep -oP '(?<=daggu1997/broadgame:)[^ ]+' deployment-service.yaml", returnStdout: true).trim()
 
             // Update the deployment-service.yaml with the new image tag
